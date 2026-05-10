@@ -33,6 +33,7 @@
       ],
       "js": [
         "config.js",
+        "data.js",
         "content.js"
       ],
       "css": [
