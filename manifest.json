@@ -1,0 +1,60 @@
+{
+  "manifest_version": 3,
+  "name": "IRCTC Tatkal UI Assistant",
+  "version": "5.0.0",
+  "description": "Compliant Manifest V3 Tatkal assistant that performs booking actions through the IRCTC UI only.",
+  "permissions": [
+    "storage",
+    "alarms",
+    "tabs",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://www.irctc.co.in/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "IRCTC Tatkal UI Assistant",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.irctc.co.in/*"
+      ],
+      "js": [
+        "config.js",
+        "content.js"
+      ],
+      "css": [
+        "overlay.css"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "overlay.css",
+        "intercept.js",
+        "icons/*"
+      ],
+      "matches": [
+        "https://www.irctc.co.in/*"
+      ]
+    }
+  ]
+}

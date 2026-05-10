@@ -1,0 +1,153 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║         🔴 AGENT STUCK AFTER LOGIN - DEBUGGING & FIXES APPLIED              ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+🎯 WHAT YOU NEED TO DO NOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Step 1: RELOAD THE EXTENSION
+  1. Go to: chrome://extensions/
+  2. Find "IRCTC Tatkal Agent"
+  3. Click the 🔄 RELOAD button
+  4. Wait 2 seconds
+
+Step 2: HARD REFRESH IRCTC TAB
+  1. Go to IRCTC tab
+  2. Press: Ctrl + Shift + R (hard refresh)
+  3. Wait for page to load
+
+Step 3: OPEN DEBUGGING CONSOLE
+  A. Background Service Worker Console:
+     - Go to chrome://extensions/
+     - Click on "Service Worker" under agent
+     - DevTools opens (keep this open)
+  
+  B. IRCTC Tab Console:
+     - Go to IRCTC tab
+     - Press F12
+     - Go to "Console" tab
+     - (keep this open too)
+
+Step 4: TRIGGER BOOKING AGAIN
+  1. Click "Manual Trigger Booking" in popup
+  2. Look at BOTH consoles
+  3. Watch for logs starting with [CONTENT] or [BG]
+
+Step 5: SHARE THE LOGS
+  Look for where logs STOP
+  - If you see [CONTENT] but not [BG] → Different issue
+  - If you see [BG] but booking times out → API issue
+  - If you see both but hanging → Message response issue
+
+
+📋 EXACT LOGS TO LOOK FOR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Good Sign (Content Script Console):
+  ✅ [CONTENT] trigger_api: Starting...
+  ✅ [CONTENT] Session context: {...}
+  ✅ [CONTENT] Sending apiBooking message to background...
+  ✅ [CONTENT] Message sent, waiting for response...
+  ✅ [CONTENT] Response received: {...}
+
+Good Sign (Background Console):
+  ✅ [BG] Message received: apiBooking
+  ✅ [BG] Processing apiBooking...
+  ✅ [BG] Running API booking with: {...}
+  ✅ 🔄 API Booking: Starting…
+  ✅ 🔄 API Booking: Searching trains…
+
+If you see these but it STILL hangs → Tell us exactly where it stops
+
+
+🔧 FIXES APPLIED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. content.js - Added timeout protection:
+   ✓ If no response in 30 seconds → error (instead of freeze)
+   ✓ Better error handling for failed messages
+   ✓ Proper step completion/failure
+
+2. background.js - Added console logging:
+   ✓ [BG] logs show if message received
+   ✓ [BG] logs show if booking started
+   ✓ [BG] logs show result/error
+
+3. content.js - Added console logging:
+   ✓ [CONTENT] logs show message sent
+   ✓ [CONTENT] logs show when waiting
+   ✓ [CONTENT] logs show response received
+
+
+📊 WHAT THIS FIXES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Before:
+  [13:33:45] ✓ trigger_api complete
+  [FROZEN - stares at screen forever]
+  [No console output to debug]
+
+After (if successful):
+  [13:33:43] 🔄 API Booking: Starting…
+  [13:33:44] Found 5 train(s). Using: Rajdhani Express
+  [13:33:45] ✅ API Booking: Complete!
+  [QR Code appears]
+
+After (if timeout):
+  [13:33:45] [CONTENT] Sending apiBooking message...
+  [30 seconds pass]
+  [13:34:15] ⚠ API Booking failed: timeout
+  [Clear error message instead of freeze]
+
+
+🚀 QUICK ACTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+☐ Reload extension (chrome://extensions/)
+☐ Hard refresh IRCTC tab (Ctrl+Shift+R)
+☐ Open Background Service Worker console
+☐ Open IRCTC tab console (F12)
+☐ Trigger booking
+☐ Watch BOTH consoles
+☐ Report where logs stop
+
+
+💬 WHEN REPORTING ISSUE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Please share:
+1. Screenshot of Background console output
+2. Screenshot of IRCTC tab console output
+3. Exactly where logs STOP
+4. Any error messages visible
+
+This will help us identify:
+- Is message reaching background? ([BG] logs)
+- Is API being called? (API logs)
+- Why is it timing out? (error messages)
+
+
+📚 DETAILED GUIDE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+See: DEBUGGING_DETAILED.md (in session files)
+
+This has:
+- Step-by-step debugging
+- Common issues & solutions
+- What each log means
+- How to manually test
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+IMMEDIATE ACTION REQUIRED:
+1. Reload extension
+2. Test again
+3. Check console logs
+4. Report results
+
+Status: 🔴 INVESTIGATING - Need console logs from you

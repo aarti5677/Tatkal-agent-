@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>IRCTC Tatkal UI Assistant</title>
+<link rel="stylesheet" href="popup.css"/>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-icon" aria-hidden="true">
+      <img src="icons/icon48.png" alt=""/>
+    </div>
+    <div>
+      <div class="logo-text">TATKAL UI</div>
+      <div class="logo-sub" id="verLabel">v5.0 &middot; Compliant UI</div>
+    </div>
+  </div>
+  <div class="status-wrap">
+    <span class="ping-indicator" id="pingMs">12ms</span>
+    <span class="status-pill">
+      <span class="status-dot idle" id="statusDot"></span>
+      <span class="status-text" id="statusText">IDLE</span>
+    </span>
+  </div>
+</header>
+
+<div class="alert-banner hidden" id="otpBanner">
+  <div class="alert-title">Mobile OTP Required</div>
+  <div class="alert-note" id="otpNote">IRCTC sent an OTP to your registered mobile number.</div>
+  <div class="alert-row">
+    <input class="alert-input" id="otpInput" type="text" maxlength="8" placeholder="000000" autocomplete="one-time-code"/>
+    <button class="alert-btn" id="otpSubmitBtn">Submit</button>
+  </div>
+  <div class="alert-timer" id="otpTimer">120s remaining</div>
+</div>
+
+<div class="alert-banner captcha-banner hidden" id="captchaBanner">
+  <div class="alert-title">Captcha Check</div>
+  <img class="captcha-img" id="captchaImg" src="" alt="captcha"/>
+  <div class="alert-row">
+    <input class="alert-input" id="captchaInput" type="text" maxlength="10" placeholder="Type here..." autocomplete="off"/>
+    <button class="alert-btn" id="captchaSubmitBtn">Go</button>
+  </div>
+  <div class="alert-timer" id="captchaTimer">90s remaining</div>
+</div>
+
+<div class="pay-banner hidden" id="payBanner">
+  <div class="pay-title">Booking Ready</div>
+  <div class="pay-amount" id="payAmount">&#8377; --</div>
+  <img class="pay-qr" id="payQRImg" src="" alt="UPI QR Code"/>
+  <div class="pay-upi" id="payUPI"></div>
+  <div class="pay-note">Scan with BHIM, PhonePe, GPay, Paytm, or any UPI app.</div>
+  <a class="pay-deeplink hidden" id="payDeeplink" href="#">Open UPI app</a>
+  <button class="pay-close" id="payCloseBtn">Done</button>
+</div>
+
+<nav class="tab-bar" aria-label="Primary">
+  <button class="tab-btn active" data-tab="dashboard" type="button"><span class="tab-icon">01</span><span>Dashboard</span></button>
+  <button class="tab-btn" data-tab="journey" type="button"><span class="tab-icon">02</span><span>Journey</span></button>
+  <button class="tab-btn" data-tab="passengers" type="button"><span class="tab-icon">03</span><span>Passengers</span></button>
+  <button class="tab-btn" data-tab="settings" type="button"><span class="tab-icon">04</span><span>Settings</span></button>
+  <button class="tab-btn" data-tab="errors" type="button"><span class="tab-icon">05</span><span>Errors</span><span class="err-count hidden" id="errCountBadge">0</span></button>
+</nav>
+
+<main>
+  <section class="tab-content active" id="tab-dashboard">
+    <div class="countdown-card">
+      <div class="cd-label" id="cdLabel">TATKAL WINDOW OPENS IN</div>
+      <div class="cd-timer" id="cdTimer">--:--:--</div>
+      <div class="cd-sub" id="cdSub">Set journey details to activate countdown</div>
+    </div>
+
+    <div class="summary-grid" id="summaryGrid">
+      <div class="sum-row"><span class="sum-k">Route</span><span class="sum-v" id="sumRoute">--</span></div>
+      <div class="sum-row"><span class="sum-k">Date</span><span class="sum-v" id="sumDate">--</span></div>
+      <div class="sum-row"><span class="sum-k">Train</span><span class="sum-v" id="sumTrain">--</span></div>
+      <div class="sum-row"><span class="sum-k">Class</span><span class="sum-v" id="sumClass">--</span></div>
+      <div class="sum-row"><span class="sum-k">Passengers</span><span class="sum-v" id="sumPax">--</span></div>
+      <div class="sum-row"><span class="sum-k">Quota</span><span class="sum-v"><span class="badge" id="sumQuota">TATKAL</span></span></div>
+    </div>
+
+    <div class="avail-box hidden" id="availBox">
+      <div class="avail-title">Live Availability</div>
+      <div class="avail-data" id="availData"></div>
+    </div>
+
+    <div class="log-wrap">
+      <div class="log-hdr">
+        <span class="section-label">Booking Log</span>
+        <button class="tiny-btn" id="clearLogBtn" type="button">Clear</button>
+      </div>
+      <div class="log-box" id="logBox">
+        <div class="log-entry log-info">System ready. Fill Journey, Passengers, and Settings, then activate.</div>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-activate" id="activateBtn" type="button">Activate Auto-Book</button>
+      <button class="btn btn-abort hidden" id="abortBtn" type="button">Abort</button>
+    </div>
+    <button class="btn btn-manual" id="manualBtn" type="button">Book Now</button>
+    <button class="btn btn-prewarm" id="preWarmNowBtn" type="button">Pre-Warm Login Now</button>
+  </section>
+
+  <section class="tab-content" id="tab-journey">
+    <div class="form-sec">
+      <div class="fg">
+        <label class="fl" for="fromStation">From Station</label>
+        <div class="ac-wrap">
+          <input class="fi" id="fromStation" type="text" placeholder="Search city or station code..." autocomplete="off"/>
+          <div class="sug-box hidden" id="fromSug"></div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl" for="toStation">To Station</label>
+        <div class="ac-wrap">
+          <input class="fi" id="toStation" type="text" placeholder="Search city or station code..." autocomplete="off"/>
+          <div class="sug-box hidden" id="toSug"></div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="fg half">
+          <label class="fl" for="journeyDate">Journey Date</label>
+          <input class="fi" id="journeyDate" type="date"/>
+        </div>
+        <div class="fg half">
+          <label class="fl" for="quotaType">Quota Type</label>
+          <select class="fi" id="quotaType">
+            <option value="TQ">Tatkal (TQ)</option>
+            <option value="PT">Premium Tatkal (PT)</option>
+            <option value="GN">General (GN)</option>
+            <option value="LD">Ladies (LD)</option>
+            <option value="LB">Lower Berth / Sr. Citizen (LB)</option>
+            <option value="HP">Person with Disability (HP)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl" for="trainNo">Train Number / Name</label>
+        <div class="ac-wrap">
+          <input class="fi" id="trainNo" type="text" placeholder="e.g. 12951 or Rajdhani..." autocomplete="off"/>
+          <div class="sug-box hidden" id="trainSug"></div>
+        </div>
+        <div class="field-hint" id="trainHint"></div>
+      </div>
+
+      <div class="form-row">
+        <div class="fg half">
+          <label class="fl" for="travelClass">Travel Class</label>
+          <select class="fi" id="travelClass">
+            <option value="">Select</option>
+            <optgroup label="AC Classes - Tatkal 10:00 AM">
+              <option value="1A">1A - First AC</option>
+              <option value="2A">2A - Second AC</option>
+              <option value="3A">3A - Third AC</option>
+              <option value="CC">CC - AC Chair Car</option>
+              <option value="EC">EC - Executive Chair Car</option>
+            </optgroup>
+            <optgroup label="Non-AC Classes - Tatkal 11:00 AM">
+              <option value="SL">SL - Sleeper</option>
+              <option value="2S">2S - Second Sitting</option>
+            </optgroup>
+          </select>
+          <div class="tatkal-hint" id="tatkalHint"></div>
+        </div>
+        <div class="fg half">
+          <label class="fl" for="berthPref">Berth Preference</label>
+          <select class="fi" id="berthPref">
+            <option value="No Preference">No Preference</option>
+            <option value="Lower">Lower Berth</option>
+            <option value="Middle">Middle Berth</option>
+            <option value="Upper">Upper Berth</option>
+            <option value="Side Lower">Side Lower</option>
+            <option value="Side Upper">Side Upper</option>
+            <option value="Window">Window Seat</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl" for="alternateTrain1">Alternate Trains</label>
+        <div class="set-info">If primary train has no seats, the agent tries these in order. Enter train numbers separated by commas.</div>
+        <input class="fi" id="alternateTrain1" type="text" placeholder="e.g. 12952, 12954" autocomplete="off"/>
+      </div>
+
+      <button class="btn btn-save" id="saveJourneyBtn" type="button">Save Journey Details</button>
+    </div>
+  </section>
+
+  <section class="tab-content" id="tab-passengers">
+    <div class="pax-list" id="paxList"></div>
+    <button class="btn btn-add" id="addPaxBtn" type="button">Add Passenger</button>
+
+    <div class="pax-form hidden" id="paxForm">
+      <div class="pf-title" id="pfTitle">New Passenger</div>
+      <div class="fg">
+        <label class="fl" for="paxName">Full Name</label>
+        <input class="fi" id="paxName" type="text" placeholder="Full name"/>
+      </div>
+      <div class="form-row">
+        <div class="fg half">
+          <label class="fl" for="paxAge">Age</label>
+          <input class="fi" id="paxAge" type="number" min="1" max="125" placeholder="Age"/>
+        </div>
+        <div class="fg half">
+          <label class="fl" for="paxGender">Gender</label>
+          <select class="fi" id="paxGender">
+            <option>Male</option><option>Female</option><option>Transgender</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg half">
+          <label class="fl" for="paxNationality">Nationality</label>
+          <select class="fi" id="paxNationality"><option>Indian</option><option>Other</option></select>
+        </div>
+        <div class="fg half">
+          <label class="fl" for="paxBerth">Berth Preference</label>
+          <select class="fi" id="paxBerth">
+            <option>No Preference</option><option>Lower</option><option>Middle</option>
+            <option>Upper</option><option>Side Lower</option><option>Side Upper</option><option>Window</option>
+          </select>
+        </div>
+      </div>
+      <div class="pf-actions">
+        <button class="btn btn-save" id="savePaxBtn" type="button">Save</button>
+        <button class="btn btn-ghost" id="cancelPaxBtn" type="button">Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="tab-content" id="tab-settings">
+    <div class="form-sec">
+      <div class="set-title">IRCTC Credentials</div>
+      <div class="set-note">Stored locally in Chrome only.</div>
+      <div class="fg">
+        <label class="fl" for="irctcUser">Username</label>
+        <input class="fi" id="irctcUser" type="text" placeholder="IRCTC login ID" autocomplete="off"/>
+      </div>
+      <div class="fg">
+        <label class="fl" for="irctcPass">Password</label>
+        <div class="pw-row">
+          <input class="fi" id="irctcPass" type="password" placeholder="IRCTC password" autocomplete="off"/>
+          <button class="tiny-btn" id="showPassBtn" type="button">Show</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg half">
+          <label class="fl" for="irctcMobile">Registered Mobile</label>
+          <input class="fi" id="irctcMobile" type="tel" placeholder="10-digit mobile"/>
+        </div>
+        <div class="fg half">
+          <label class="fl" for="irctcEmail">Email</label>
+          <input class="fi" id="irctcEmail" type="email" placeholder="your@email.com"/>
+        </div>
+      </div>
+
+      <div class="set-title" style="display:none">Disabled Network Settings</div>
+      <div class="set-info" style="display:none">Disabled in compliant UI mode.</div>
+      <div class="form-row" style="display:none">
+        <div class="fg half">
+          <label class="fl" for="proxyIp">Disabled</label>
+          <input class="fi" id="proxyIp" type="text" placeholder="Disabled"/>
+        </div>
+        <div class="fg half">
+          <label class="fl" for="proxyPort">Disabled</label>
+          <input class="fi" id="proxyPort" type="number" placeholder="8080"/>
+        </div>
+      </div>
+      <div class="form-row" style="display:none">
+        <div class="fg half">
+          <label class="fl" for="proxyUser">Disabled</label>
+          <input class="fi" id="proxyUser" type="text" placeholder="Disabled"/>
+        </div>
+        <div class="fg half">
+          <label class="fl" for="proxyPass">Disabled</label>
+          <input class="fi" id="proxyPass" type="password" placeholder="Disabled"/>
+        </div>
+      </div>
+      <div class="toggle-row" style="display:none">
+        <span class="tl">Disabled Network Routing</span>
+        <label class="toggle"><input type="checkbox" id="enableProxy"/><span class="track"></span></label>
+      </div>
+
+      <div class="set-title">Execution Engine</div>
+      <div class="toggle-row">
+        <span class="tl">Read-only Prefetch</span>
+        <label class="toggle"><input type="checkbox" id="apiMode" disabled/><span class="track"></span></label>
+      </div>
+      <div class="set-info">Live booking always uses the IRCTC UI. Direct booking APIs are disabled.</div>
+
+      <div class="set-title">Login Method</div>
+      <div class="set-info">Recommended: log in to IRCTC at T-10 minutes, then click Pre-Warm Login Now on the dashboard.</div>
+      <div class="toggle-row">
+        <span class="tl">Auto-Login Fallback</span>
+        <label class="toggle"><input type="checkbox" id="useOTP" checked/><span class="track"></span></label>
+      </div>
+      <div class="toggle-row" style="display:none">
+        <span class="tl">External OTP Sync</span>
+        <label class="toggle"><input type="checkbox" id="enableAutoOtpSync"/><span class="track"></span></label>
+      </div>
+
+      <div id="autoOtpSyncModal" class="sync-modal hidden" style="display:none">
+        <div class="sync-dialog">
+          <button id="closeAutoOtpSyncModal" class="modal-close" type="button" aria-label="Close">&times;</button>
+          <h3>OTP Sync Registration</h3>
+          <div id="aadhaarInputSection">
+            <div class="sync-input-card">
+              <p>External OTP sync is disabled.</p>
+              <input type="text" maxlength="4" id="aadhaarInput" placeholder="1234"/>
+            </div>
+            <button id="generateOtpQrBtn" class="btn btn-save" type="button">Generate QR Code</button>
+          </div>
+          <div id="qrCodeSection" class="hidden">
+            <div class="qr-shell">
+              <img id="otpSyncQrImage" src="" alt="OTP sync disabled"/>
+            </div>
+            <p class="qr-note">Scan with phone to sync OTP.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="set-title">Captcha</div>
+      <div class="set-info">Enable auto-solving with 2Captcha service for faster login.</div>
+      <div class="fg">
+        <label class="fl" for="twoCaptchaKey">2Captcha API Key</label>
+        <input class="fi" id="twoCaptchaKey" type="text" placeholder="Your 2Captcha API key" autocomplete="off"/>
+      </div>
+      <div class="toggle-row">
+        <span class="tl">Auto-Solve Captcha</span>
+        <label class="toggle"><input type="checkbox" id="useAutoCaptcha"/><span class="track"></span></label>
+      </div>
+
+      <div class="set-title">Payment</div>
+      <div class="set-info">Payment is completed through the IRCTC UI or its payment gateway.</div>
+      <div class="fg" style="display:none">
+        <label class="fl" for="upiId">Your UPI ID</label>
+        <input class="fi" id="upiId" type="text" placeholder="yourname@upi"/>
+      </div>
+      <div class="fg">
+        <label class="fl" for="paymentMethod">Payment Method Preference</label>
+        <select class="fi" id="paymentMethod">
+          <option value="PAYTM">PayTM in IRCTC UI</option>
+          <option value="PHONEPE">PhonePe in IRCTC UI</option>
+          <option value="RAZORPAY">Razorpay in IRCTC UI</option>
+          <option value="IRCTCIPAY">IRCTC iPay</option>
+          <option value="UPI">UPI in IRCTC UI</option>
+        </select>
+      </div>
+      <div class="toggle-row">
+        <span class="tl">Payment Pause</span>
+        <label class="toggle"><input type="checkbox" id="paymentPause"/><span class="track"></span></label>
+      </div>
+
+      <div class="set-title">Advanced Timing</div>
+      <div class="set-info">Format: HH:MM:SS:MS. Leave blank to disable.</div>
+      <div class="form-row">
+        <div class="fg half">
+          <label class="fl" for="timeLogin">Login Time</label>
+          <input class="fi" id="timeLogin" type="text" placeholder="09:59:59:500"/>
+        </div>
+        <div class="fg half">
+          <label class="fl" for="timeSearch">Search Time</label>
+          <input class="fi" id="timeSearch" type="text" placeholder="10:00:00:100"/>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl" for="timeSubmit">Submit Time</label>
+        <input class="fi" id="timeSubmit" type="text" placeholder="10:00:02:000"/>
+      </div>
+
+      <div class="set-title">Automation</div>
+      <div class="toggle-row">
+        <span class="tl">Auto-Open IRCTC Tab</span>
+        <label class="toggle"><input type="checkbox" id="autoOpen" checked/><span class="track"></span></label>
+      </div>
+      <div class="toggle-row">
+        <span class="tl">Auto-Login</span>
+        <label class="toggle"><input type="checkbox" id="autoLogin" checked/><span class="track"></span></label>
+      </div>
+      <div class="toggle-row">
+        <span class="tl">Auto-Fill Passengers</span>
+        <label class="toggle"><input type="checkbox" id="autoFillPax" checked/><span class="track"></span></label>
+      </div>
+      <div class="toggle-row" style="display:none">
+        <span class="tl">Show UPI QR</span>
+        <label class="toggle"><input type="checkbox" id="showQR" checked/><span class="track"></span></label>
+      </div>
+      <div class="toggle-row">
+        <span class="tl">Desktop Notifications</span>
+        <label class="toggle"><input type="checkbox" id="desktopNotif" checked/><span class="track"></span></label>
+      </div>
+
+      <button class="btn btn-save" id="saveSettingsBtn" type="button">Save All Settings</button>
+
+      <div class="danger-zone">
+        <div class="set-title danger-title">Danger Zone</div>
+        <button class="btn btn-danger" id="clearAllBtn" type="button">Clear All Data</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="tab-content" id="tab-errors">
+    <div class="err-toolbar">
+      <button class="btn btn-dl" id="downloadErrBtn" type="button">Download Report</button>
+      <button class="btn btn-danger-sm" id="clearErrBtn" type="button">Clear Log</button>
+      <span class="err-meta" id="errMeta">No errors recorded.</span>
+    </div>
+    <div class="err-list" id="errList">
+      <div class="err-empty">No errors recorded yet.</div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <span id="footInfo">AC: 10:00 AM &middot; Non-AC: 11:00 AM &middot; <span id="footQuota">Quota: TQ</span></span>
+  <span id="footClock">--:--:--</span>
+</footer>
+
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>
